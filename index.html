@@ -13,7 +13,7 @@
         :root { --bg: #eef2f5; --card: #ffffff; --text: #333; --border: #ccc; --input: #fff; }
         .dark-mode { --bg: #121212; --card: #1e1e1e; --text: #f1f1f1; --border: #444; --input: #2d2d2d; }
         
-        body { font-family: 'Segoe UI', sans-serif; background-color: var(--bg); color: var(--text); margin: 0; padding: 20px; transition: 0.3s; padding-bottom: 100px; touch-action: manipulation; }
+        body { font-family: 'Segoe UI', sans-serif; background-color: var(--bg); color: var(--text); margin: 0; padding: 20px; transition: 0.3s; padding-bottom: 100px; touch-action: manipulation; scroll-behavior: smooth; }
         .dashboard { display: flex; flex-wrap: wrap; gap: 20px; max-width: 1200px; margin: 0 auto; justify-content: center; }
         .workspace, .controls, .history-panel { background: var(--card); padding: 20px; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
         .workspace { flex: 1; min-width: 320px; }
@@ -56,11 +56,19 @@
 
         .engine-status { font-size: 11px; color: #28a745; margin-top: 5px; text-align: right; opacity: 0.8; }
 
+        /* 🚀 NEW: Floating Toast Banner CSS */
+        .donation-toast { position: fixed; bottom: 20px; right: 20px; background: linear-gradient(135deg, #e0c3fc 0%, #8ec5fc 100%); padding: 15px 20px; border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.2); z-index: 9999; display: flex; align-items: center; gap: 15px; transform: translateX(150%); transition: transform 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275); max-width: 320px; }
+        .donation-toast.show { transform: translateX(0); }
+        .toast-close { background: rgba(0,0,0,0.1); border: none; border-radius: 50%; width: 24px; height: 24px; cursor: pointer; font-size: 12px; display: flex; align-items: center; justify-content: center; position: absolute; top: 5px; right: 5px; color: #333; transition: 0.2s; }
+        .toast-close:hover { background: rgba(0,0,0,0.2); }
+
         @media (max-width: 768px) {
             .dashboard { flex-direction: column; }
             .action-bar { position: fixed; bottom: 0; left: 0; width: 100%; background: var(--card); padding: 15px; box-shadow: 0 -4px 15px rgba(0,0,0,0.2); z-index: 1000; }
-            /* Hide Desktop QR on Mobile to save space */
             .desktop-qr { display: none !important; }
+            /* Mobile Toast Positioning */
+            .donation-toast { bottom: 90px; right: 50%; transform: translateX(50%) translateY(200%); width: 85%; }
+            .donation-toast.show { transform: translateX(50%) translateY(0); }
         }
     </style>
 </head>
@@ -131,7 +139,7 @@
                 <p id="engineStatus" class="engine-status">⚡ Optimizing engines...</p>
             </div>
 
-            <div style="margin-top: 25px; text-align: center; padding: 20px; background: linear-gradient(135deg, #e0c3fc 0%, #8ec5fc 100%); border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.1);">
+            <div id="donateSection" style="margin-top: 25px; text-align: center; padding: 20px; background: linear-gradient(135deg, #e0c3fc 0%, #8ec5fc 100%); border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.1);">
                 <h3 style="margin: 0 0 10px 0; color: #222;">☕ Saved your time and money?</h3>
                 <p style="font-size: 13px; color: #444; margin-bottom: 15px;">Cyber cafes charge ₹50+ for resizing. If this 100% safe & offline tool helped you with your exam form, consider buying the developer a chai!</p>
                 
@@ -154,6 +162,16 @@
         <div class="history-panel"><h3 style="margin-top: 0; color: #007bff;">🕒 Session History</h3><div id="historyGallery"><p id="emptyHistoryMsg" style="opacity: 0.6; font-size: 14px; width: 100%;">No files processed yet.</p></div></div>
     </div>
 
+    <div id="donationToast" class="donation-toast">
+        <button class="toast-close" onclick="document.getElementById('donationToast').classList.remove('show')">✖</button>
+        <div style="font-size: 28px;">☕</div>
+        <div>
+            <p style="margin: 0; font-size: 13px; color: #222; font-weight: bold;">Love this free tool?</p>
+            <p style="margin: 2px 0 8px 0; font-size: 11px; color: #444;">Support 'reyz' to build more awesome stuff!</p>
+            <a href="#donateSection" onclick="document.getElementById('donationToast').classList.remove('show')" style="display: inline-block; background: #111; color: #fff; text-decoration: none; font-size: 11px; padding: 6px 12px; border-radius: 4px; font-weight: bold; box-shadow: 0 2px 5px rgba(0,0,0,0.2);">Support Now</a>
+        </div>
+    </div>
+
     <div id="successModal" class="modal-overlay">
         <div class="modal-content">
             <h2 id="modalTitle" style="color:#28a745; margin-top:0;">✅ Processing...</h2>
@@ -166,6 +184,7 @@
 
 <script>
     window.addEventListener('DOMContentLoaded', () => {
+        // Load Heavy Scripts Lazy
         setTimeout(() => {
             const heavyScripts = [
                 "https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js",
@@ -191,6 +210,11 @@
                 document.body.appendChild(script);
             });
         }, 1000); 
+
+        // 🚀 NEW: Show Floating Banner after 4 seconds
+        setTimeout(() => {
+            document.getElementById('donationToast').classList.add('show');
+        }, 4000);
     });
 
     let cropper, originalBytes = 0; let selectedFiles = []; 
