@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Ultimate Studio v33.0 - Lightning Fast</title>
+    <title>Free Exam Photo Resizer & Signature Converter (Offline) | 50KB</title>
     
     <link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin>
     <link rel="dns-prefetch" href="https://cdnjs.cloudflare.com">
@@ -54,7 +54,6 @@
         .history-item img { width: 100%; height: 100px; object-fit: contain; background: #eee; border-radius: 5px; margin-bottom: 8px; }
         .history-item p { font-size: 12px; margin: 0 0 5px 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
-        /* Loader pulse for lazy loading state */
         .engine-status { font-size: 11px; color: #28a745; margin-top: 5px; text-align: right; opacity: 0.8; }
 
         @media (max-width: 768px) {
@@ -66,7 +65,7 @@
 <body>
 
     <div class="header">
-        <h2 style="margin:0;">⚡ Ultimate Studio v33.0</h2>
+        <h2 style="margin:0;">⚡ Ultimate Studio</h2>
         <div><button onclick="document.body.classList.toggle('dark-mode')" class="btn" style="border:1px solid var(--border); background:var(--card); color:var(--text); border-radius:50%; width: 45px; height: 45px; font-size: 18px;">🌙</button></div>
     </div>
 
@@ -129,6 +128,19 @@
                 <button class="convert-btn" onclick="universalConvert()">🔄 Direct Format Converter</button>
                 <p id="engineStatus" class="engine-status">⚡ Optimizing engines...</p>
             </div>
+
+            <div style="margin-top: 25px; text-align: center; padding: 20px; background: linear-gradient(135deg, #e0c3fc 0%, #8ec5fc 100%); border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.1);">
+                <h3 style="margin: 0 0 10px 0; color: #222;">☕ Saved your time and money?</h3>
+                <p style="font-size: 13px; color: #444; margin-bottom: 15px;">Cyber cafes charge ₹50+ for resizing. If this 100% safe & offline tool helped you with your exam form, consider buying the developer a chai!</p>
+                
+                <a href="upi://pay?pa=7488773762@ybl&pn=Aman%20Kumar&cu=INR" style="text-decoration: none;">
+                    <button class="btn" style="background: #111; color: #fff; padding: 12px 20px; font-size: 15px; border-radius: 50px; width: 100%; display: flex; align-items: center; justify-content: center; gap: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.2);">
+                        <span>💳</span> Support via UPI (GPay/PhonePe)
+                    </button>
+                </a>
+                <p style="font-size: 11px; margin-top: 12px; color: #555; font-weight: bold;">Developed with ❤️ by reyz</p>
+            </div>
+
         </div>
 
         <div class="history-panel"><h3 style="margin-top: 0; color: #007bff;">🕒 Session History</h3><div id="historyGallery"><p id="emptyHistoryMsg" style="opacity: 0.6; font-size: 14px; width: 100%;">No files processed yet.</p></div></div>
@@ -145,8 +157,6 @@
 <script defer src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.js"></script>
 
 <script>
-    // 🚀 THE SPEED HACK: LAZY LOADING HEAVY ENGINES
-    // We wait for the webpage to be fully drawn on mobile, THEN we quietly download the heavy PDF/ZIP scripts
     window.addEventListener('DOMContentLoaded', () => {
         setTimeout(() => {
             const heavyScripts = [
@@ -172,7 +182,7 @@
                 };
                 document.body.appendChild(script);
             });
-        }, 1000); // Wait 1 second after UI loads so mobile doesn't freeze
+        }, 1000); 
     });
 
     let cropper, originalBytes = 0; let selectedFiles = []; 
@@ -233,7 +243,6 @@
     function stopDrag() { isDragging = false; faceGuide.style.cursor = 'move'; }
     faceGuide.addEventListener('mousedown', startDrag); faceGuide.addEventListener('touchstart', startDrag); document.addEventListener('mousemove', doDrag); document.addEventListener('touchmove', doDrag); document.addEventListener('mouseup', stopDrag); document.addEventListener('touchend', stopDrag);
 
-    // Converter with Lazy Load Protection
     async function universalConvert() {
         if (selectedFiles.length === 0) return alert("Please upload a file first!");
         
@@ -242,7 +251,6 @@
         const fileExt = formatRaw.split('|')[1];
         const firstFile = selectedFiles[0];
 
-        // Protection: If user clicked before engines loaded
         if (firstFile.type === 'application/pdf' && !window.pdfjsLib) return alert("⏳ PDF Engine is loading. Please wait a few seconds and try again!");
         if (targetFormat === 'application/pdf' && !window.jspdf) return alert("⏳ PDF Engine is loading. Please wait a few seconds and try again!");
 
@@ -272,7 +280,6 @@
         } catch (error) { document.getElementById('modalTitle').innerText = "❌ Error"; document.getElementById('modalDownloadArea').innerHTML = `<p style="color:red;">${error.message}</p>`; document.getElementById('closeModalBtn').style.display = 'block'; }
     }
 
-    // Resize Engine with Lazy Load Protection
     document.getElementById('resizeBtn').addEventListener('click', async function() {
         if(selectedFiles.length === 0 || selectedFiles[0].type === 'application/pdf') return alert("Upload an image first for resizing!");
         let targetValue = parseFloat(document.getElementById('targetSize').value); let unit = document.getElementById('sizeUnit').value; 
@@ -281,7 +288,6 @@
         const format = formatRaw.split('|')[0];
         const fileExt = formatRaw.split('|')[1];
 
-        // Protection: If user wants PDF but script isn't loaded
         if (format === 'application/pdf' && !window.jspdf) return alert("⏳ PDF Engine is loading. Please wait a few seconds and try again!");
 
         if(isNaN(targetValue)) return alert("Enter target size!");
