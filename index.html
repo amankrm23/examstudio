@@ -59,13 +59,15 @@
         @media (max-width: 768px) {
             .dashboard { flex-direction: column; }
             .action-bar { position: fixed; bottom: 0; left: 0; width: 100%; background: var(--card); padding: 15px; box-shadow: 0 -4px 15px rgba(0,0,0,0.2); z-index: 1000; }
+            /* Hide Desktop QR on Mobile to save space */
+            .desktop-qr { display: none !important; }
         }
     </style>
 </head>
 <body>
 
     <div class="header">
-        <h2 style="margin:0;">⚡ Ultimate Studio</h2>
+        <h2 style="margin:0;">⚡ ExamStudio</h2>
         <div><button onclick="document.body.classList.toggle('dark-mode')" class="btn" style="border:1px solid var(--border); background:var(--card); color:var(--text); border-radius:50%; width: 45px; height: 45px; font-size: 18px;">🌙</button></div>
     </div>
 
@@ -133,12 +135,18 @@
                 <h3 style="margin: 0 0 10px 0; color: #222;">☕ Saved your time and money?</h3>
                 <p style="font-size: 13px; color: #444; margin-bottom: 15px;">Cyber cafes charge ₹50+ for resizing. If this 100% safe & offline tool helped you with your exam form, consider buying the developer a chai!</p>
                 
-                <a href="upi://pay?pa=7488773762@ybl&pn=Aman%20Kumar&cu=INR" style="text-decoration: none;">
-                    <button class="btn" style="background: #111; color: #fff; padding: 12px 20px; font-size: 15px; border-radius: 50px; width: 100%; display: flex; align-items: center; justify-content: center; gap: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.2);">
-                        <span>💳</span> Support via UPI (GPay/PhonePe)
+                <div class="desktop-qr" style="background: white; padding: 10px; border-radius: 10px; display: inline-block; margin-bottom: 15px; box-shadow: 0 2px 5px rgba(0,0,0,0.1);">
+                    <img src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=upi://pay?pa=7488773762@ybl%26pn=Aman%20Kumar%26cu=INR" alt="UPI QR Code" style="width: 120px; height: 120px; display: block; margin: 0 auto;">
+                    <p style="font-size: 11px; margin: 5px 0 0 0; color: #666; font-weight: bold;">Scan to Pay (Desktop)</p>
+                </div>
+
+                <a href="upi://pay?pa=7488773762@ybl&pn=Aman%20Kumar&cu=INR" style="text-decoration: none; display: block;">
+                    <button style="background: #111; color: #fff; padding: 12px 20px; font-size: 15px; border-radius: 50px; width: 100%; display: flex; align-items: center; justify-content: center; gap: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.2); cursor: pointer; border: none; font-weight: bold;">
+                        <span>💳</span> Open UPI App (Mobile)
                     </button>
                 </a>
-                <p style="font-size: 11px; margin-top: 12px; color: #555; font-weight: bold;">Developed with ❤️ by reyz</p>
+                
+                <p style="font-size: 11px; margin-top: 15px; color: #555; font-weight: bold;">Developed with ❤️ by reyz</p>
             </div>
 
         </div>
