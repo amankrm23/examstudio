@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Ultimate Studio v32.0 - Multi-Format Edition</title>
+    
+    <link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin>
+    <link rel="dns-prefetch" href="https://cdnjs.cloudflare.com">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.css">
+    
+    <style>
+        :root { --bg: #eef2f5; --card: #ffffff; --text: #333; --border: #ccc; --input: #fff; }
+        .dark-mode { --bg: #121212; --card: #1e1e1e; --text: #f1f1f1; --border: #444; --input: #2d2d2d; }
+        
+        body { font-family: 'Segoe UI', sans-serif; background-color: var(--bg); color: var(--text); margin: 0; padding: 20px; transition: 0.3s; padding-bottom: 100px; touch-action: manipulation; }
+        .dashboard { display: flex; flex-wrap: wrap; gap: 20px; max-width: 1200px; margin: 0 auto; justify-content: center; }
+        .workspace, .controls, .history-panel { background: var(--card); padding: 20px; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+        .workspace { flex: 1; min-width: 320px; }
+        .controls { flex: 1; min-width: 320px; }
+        .history-panel { width: 100%; margin-top: 10px; }
+        
+        .drop-zone { border: 2px dashed #007bff; padding: 25px 10px; text-align: center; border-radius: 8px; cursor: pointer; background: var(--input); transition: 0.3s; margin-bottom: 15px; }
+        .drop-zone.drag-over { background: rgba(0, 123, 255, 0.1); border-color: #28a745; }
+        
+        #cropperWrapper { display: none; margin-top: 15px; width: 100%; height: 50vh; min-height: 400px; background-color: #f0f0f0; background-image: linear-gradient(45deg, #ccc 25%, transparent 25%), linear-gradient(-45deg, #ccc 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #ccc 75%), linear-gradient(-45deg, transparent 75%, #ccc 75%); background-size: 20px 20px; border: 2px dashed var(--border); overflow: hidden; position: relative; }
+        #batchUI { display: none; margin-top: 15px; padding: 30px; text-align: center; background: rgba(40, 167, 69, 0.1); border: 2px dashed #28a745; border-radius: 8px; }
+        
+        img { display: block; max-width: 100%; }
+        #faceGuide { display: none; position: absolute; top: 50%; left: 50%; width: 140px; height: 190px; border: 3px dashed rgba(255, 50, 50, 0.9); border-radius: 50% / 40%; box-shadow: 0 0 0 9999px rgba(0,0,0,0.4); z-index: 10; cursor: move; transform: translate(-50%, -50%); }
+
+        .input-group { margin-bottom: 12px; }
+        .row { display: flex; gap: 10px; }
+        label { font-size: 13px; font-weight: bold; opacity: 0.8; display: block; margin-bottom: 5px; }
+        input[type="number"], input[type="text"], input[type="date"], select { width: 100%; padding: 10px; border: 1px solid var(--border); background: var(--input); color: var(--text); border-radius: 5px; box-sizing: border-box; }
+        input[type="range"] { width: 100%; cursor: pointer; margin: 5px 0; }
+        .filter-label { display: flex; justify-content: space-between; font-size: 12px; }
+
+        .btn { cursor: pointer; padding: 10px; border: none; border-radius: 6px; font-weight: bold; transition: 0.2s; }
+        .template-btn { width: calc(50% - 6px); margin: 2px; color: white; }
+        .generate-btn { width: 100%; padding: 16px; background-color: #28a745; color: white; font-size: 18px; margin-top: 15px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        .convert-btn { width: 100%; padding: 12px; background: linear-gradient(45deg, #6f42c1, #fd7e14); color: white; font-size: 16px; margin-top: 15px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        .reset-btn { width: 100%; padding: 12px; background: #dc3545; color: white; font-size: 15px; margin-bottom: 15px; border-radius: 8px; display: none; }
+        
+        .header { display: flex; justify-content: space-between; align-items: center; max-width: 1200px; margin: 0 auto 20px auto; }
+        .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 2000; align-items: center; justify-content: center; flex-direction: column; }
+        .modal-content { background: var(--card); padding: 30px; border-radius: 15px; text-align: center; max-width: 380px; width: 90%; }
+        
+        .loader-spinner { border: 5px solid #f3f3f3; border-top: 5px solid #007bff; border-radius: 50%; width: 50px; height: 50px; animation: spin 1s linear infinite; margin-bottom: 15px; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+        #historyGallery { display: flex; gap: 15px; flex-wrap: wrap; margin-top: 15px; }
+        .history-item { background: var(--input); border: 1px solid var(--border); padding: 10px; border-radius: 8px; width: 160px; text-align: center; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+        .history-item img { width: 100%; height: 100px; object-fit: contain; background: #eee; border-radius: 5px; margin-bottom: 8px; }
+        .history-item p { font-size: 12px; margin: 0 0 5px 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+        @media (max-width: 768px) {
+            .dashboard { flex-direction: column; }
+            .action-bar { position: fixed; bottom: 0; left: 0; width: 100%; background: var(--card); padding: 15px; box-shadow: 0 -4px 15px rgba(0,0,0,0.2); z-index: 1000; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="header">
+        <h2 style="margin:0;">⚡ Ultimate Studio v32.0</h2>
+        <div><button onclick="document.body.classList.toggle('dark-mode')" class="btn" style="border:1px solid var(--border); background:var(--card); color:var(--text); border-radius:50%; width: 45px; height: 45px; font-size: 18px;">🌙</button></div>
+    </div>
+
+    <div class="dashboard">
+        <div class="workspace">
+            <label style="color:#007bff; font-size: 15px;">1. Upload File(s) or PDF</label>
+            <button id="newUploadBtn" class="btn reset-btn" onclick="resetWorkspace()">🔙 Upload Another File</button>
+            <div id="dropZone" class="drop-zone"><span style="font-size: 24px;">📁</span><br><span style="color: #007bff; font-weight: bold;">Click or Drag & Drop File(s)</span></div>
+            <input type="file" id="uploadImage" accept="image/*, application/pdf" multiple style="display: none;">
+
+            <div id="cropperWrapper"><div id="faceGuide"></div><img id="imageToCrop"></div>
+            <div id="batchUI"><h2 style="color: #28a745; margin-top: 0;">🗂️ File Ready!</h2><p id="batchText" style="font-size: 18px; font-weight: bold;">0 files selected</p></div>
+
+            <div id="editorControls" style="display:none; margin-top:15px; padding: 15px; background: var(--input); border: 1px solid var(--border); border-radius: 8px;">
+                <div id="singleControlsOnly" style="display: flex; gap: 5px; margin-bottom: 15px; flex-wrap: wrap;">
+                    <button class="btn" onclick="cropper.rotate(-90)" style="background:#6c757d; color:white; flex:1;">↺ L</button>
+                    <button class="btn" onclick="cropper.rotate(90)" style="background:#6c757d; color:white; flex:1;">↻ R</button>
+                    <button class="btn" id="toggleFaceBtn" style="background:#dc3545; color:white; flex:1;">👤 Guide</button>
+                    <button class="btn" onclick="magicWandErase()" style="flex:1.5; background: #e83e8c; color: white;">🖌️ Magic Eraser</button>
+                    <button class="btn" onclick="extractSignature()" style="flex:1.5; background: #17a2b8; color: white;">✂️ Clean Sig</button>
+                </div>
+                <button class="btn" onclick="applyMagicScan()" style="width: 100%; background: linear-gradient(45deg, #007bff, #28a745); color: white; margin-bottom: 15px;">🪄 Auto Document Scan</button>
+                <div class="row"><div style="flex:1;"><div class="filter-label"><span>Brightness</span><span id="brVal">100%</span></div><input type="range" id="brightness" min="50" max="150" value="100"></div><div style="flex:1;"><div class="filter-label"><span>Contrast</span><span id="ctVal">100%</span></div><input type="range" id="contrast" min="50" max="200" value="100"></div></div>
+                <div class="row" style="margin-top: 10px;"><div style="flex:1;"><div class="filter-label"><span>Saturation</span><span id="satVal">100%</span></div><input type="range" id="saturation" min="0" max="200" value="100"></div><div style="flex:1;"><div class="filter-label"><span>Grayscale</span><span id="grayVal">0%</span></div><input type="range" id="grayscale" min="0" max="100" value="0"></div></div>
+            </div>
+        </div>
+
+        <div class="controls">
+            <label>2. Templates & Settings</label>
+            <div style="margin-bottom: 15px;">
+                <button class="btn template-btn" onclick="setPreset(276, 354, 50, 'kb')" style="background:#007bff">SSC Photo</button>
+                <button class="btn template-btn" onclick="setPreset(140, 60, 20, 'kb')" style="background:#6c757d">Signature</button>
+                <button class="btn template-btn" onclick="setPreset(350, 350, 300, 'kb')" style="background:#17a2b8">UPSC</button>
+                <button class="btn template-btn" onclick="setPreset(276, 354, 100, 'kb')" style="background:#dc3545">RRB</button>
+            </div>
+            <div class="row input-group"><div style="flex:1;"><label>Width (px)</label><input type="number" id="imgWidth" placeholder="Auto"></div><div style="flex:1;"><label>Height (px)</label><input type="number" id="imgHeight" placeholder="Auto"></div></div>
+            <div class="row input-group"><div style="flex:2;"><label>Target Size</label><input type="number" id="targetSize" placeholder="50"></div><div style="flex:1.5;"><label>Unit</label>
+                <select id="sizeUnit"><option value="b">B</option><option value="kb" selected>KB</option><option value="mb">MB</option><option value="gb">GB</option></select></div>
+            </div>
+            
+            <div class="input-group">
+                <label>Export Format</label>
+                <select id="exportFormat">
+                    <option value="image/jpeg|jpg">JPG (.jpg)</option>
+                    <option value="image/jpeg|jpeg">JPEG (.jpeg)</option>
+                    <option value="image/png|png">PNG (.png)</option>
+                    <option value="image/webp|webp">WEBP (.webp)</option>
+                    <option value="image/bmp|bmp">BMP (.bmp)</option>
+                    <option value="image/gif|gif">GIF (.gif)</option>
+                    <option value="application/pdf|pdf">📄 PDF Document</option>
+                </select>
+            </div>
+
+            <label>Add Name & Date (Optional)</label>
+            <input type="text" id="printName" placeholder="NAME: AMAN KUMAR" style="margin-bottom:5px;">
+            <input type="date" id="printDate">
+            
+            <div class="action-bar">
+                <button id="resizeBtn" class="generate-btn">🚀 Generate HD Resized File</button>
+                <button class="convert-btn" onclick="universalConvert()">🔄 Direct Format Converter (PDF ↔ Image)</button>
+            </div>
+        </div>
+
+        <div class="history-panel"><h3 style="margin-top: 0; color: #007bff;">🕒 Session History</h3><div id="historyGallery"><p id="emptyHistoryMsg" style="opacity: 0.6; font-size: 14px; width: 100%;">No files processed yet.</p></div></div>
+    </div>
+
+    <div id="successModal" class="modal-overlay">
+        <div class="modal-content">
+            <h2 id="modalTitle" style="color:#28a745; margin-top:0;">✅ Processing...</h2>
+            <div id="modalDownloadArea"></div>
+            <button class="btn" id="closeModalBtn" onclick="document.getElementById('successModal').style.display='none'" style="display:none; background:#dc3545; width:100%; margin-top:15px; color:white;">Close</button>
+        </div>
+    </div>
+
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.js"></script>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+
+<script>
+    window.onload = function() {
+        if(window.pdfjsLib) { pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js'; }
+    };
+
+    let cropper, originalBytes = 0; let selectedFiles = []; 
+    const formatSize = (b) => { if (b === 0) return '0 B'; const k = 1024, sizes = ['B', 'KB', 'MB', 'GB']; const i = Math.floor(Math.log(b) / Math.log(k)); return parseFloat((b / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i]; };
+
+    const historyGallery = document.getElementById('historyGallery'); const emptyHistoryMsg = document.getElementById('emptyHistoryMsg');
+    function addToHistory(previewUrl, downloadUrl, filename, detailsText) {
+        if (emptyHistoryMsg) emptyHistoryMsg.style.display = 'none';
+        const item = document.createElement('div'); item.className = 'history-item';
+        let imgTag = `<img src="${previewUrl}">`;
+        if (filename.endsWith('.pdf')) imgTag = `<div style="height: 100px; background: #eee; border-radius: 5px; margin-bottom: 8px; display:flex; align-items:center; justify-content:center; font-size:30px;">📄</div>`;
+        else if (filename.endsWith('.zip')) imgTag = `<div style="height: 100px; background: #eee; border-radius: 5px; margin-bottom: 8px; display:flex; align-items:center; justify-content:center; font-size:30px;">🗂️</div>`;
+        item.innerHTML = `${imgTag}<p title="${filename}"><b>${filename}</b></p><p style="font-size: 11px; color: #666; margin: 0 0 8px 0;">${detailsText}</p><a href="${downloadUrl}" download="${filename}" style="text-decoration: none;"><button class="btn" style="background: #28a745; color: white; width: 100%; padding: 5px; font-size: 12px;">📥 Download</button></a>`;
+        historyGallery.insertBefore(item, historyGallery.firstChild);
+    }
+
+    function resetWorkspace() {
+        if(cropper) { cropper.destroy(); cropper = null; }
+        document.getElementById('cropperWrapper').style.display = 'none'; document.getElementById('editorControls').style.display = 'none';
+        document.getElementById('batchUI').style.display = 'none'; document.getElementById('dropZone').style.display = 'block';
+        document.getElementById('newUploadBtn').style.display = 'none'; document.getElementById('uploadImage').value = ''; selectedFiles = [];
+    }
+
+    const dropZone = document.getElementById('dropZone'); const fileInput = document.getElementById('uploadImage');
+    dropZone.addEventListener('click', () => { fileInput.click(); }); dropZone.addEventListener('dragover', (e) => { e.preventDefault(); dropZone.classList.add('drag-over'); });
+    dropZone.addEventListener('dragleave', () => { dropZone.classList.remove('drag-over'); }); dropZone.addEventListener('drop', (e) => { e.preventDefault(); dropZone.classList.remove('drag-over'); if(e.dataTransfer.files.length) { fileInput.files = e.dataTransfer.files; handleFiles(e.dataTransfer.files); } });
+    fileInput.addEventListener('change', (e) => { if(e.target.files.length) handleFiles(e.target.files); });
+
+    function handleFiles(files) {
+        selectedFiles = Array.from(files).filter(f => f.type.startsWith('image/') || f.type === 'application/pdf');
+        if (selectedFiles.length === 0) return;
+        document.getElementById('editorControls').style.display = 'block'; document.getElementById('dropZone').style.display = 'none'; document.getElementById('newUploadBtn').style.display = 'block';
+        if (selectedFiles.length === 1 && selectedFiles[0].type.startsWith('image/')) {
+            document.getElementById('batchUI').style.display = 'none'; document.getElementById('cropperWrapper').style.display = 'block'; document.getElementById('singleControlsOnly').style.display = 'flex';
+            originalBytes = selectedFiles[0].size; const reader = new FileReader();
+            reader.onload = (ev) => { const img = document.getElementById('imageToCrop'); img.onload = function() { if(cropper) cropper.destroy(); cropper = new Cropper(img, { viewMode: 2, dragMode: 'move', autoCropArea: 0.9 }); resetFilters(); }; img.src = ev.target.result; };
+            reader.readAsDataURL(selectedFiles[0]);
+        } else {
+            if(cropper) { cropper.destroy(); cropper = null; } document.getElementById('cropperWrapper').style.display = 'none'; document.getElementById('singleControlsOnly').style.display = 'none'; 
+            document.getElementById('batchUI').style.display = 'block'; document.getElementById('batchText').innerText = selectedFiles[0].type === 'application/pdf' ? `PDF File Selected` : `${selectedFiles.length} files selected`; resetFilters();
+        }
+    }
+
+    const brightness = document.getElementById('brightness'), contrast = document.getElementById('contrast'), saturation = document.getElementById('saturation'), grayscale = document.getElementById('grayscale');
+    function applyFilters() { document.getElementById('brVal').innerText = brightness.value + '%'; document.getElementById('ctVal').innerText = contrast.value + '%'; const filterStr = `brightness(${brightness.value}%) contrast(${contrast.value}%) saturate(${saturation.value}%) grayscale(${grayscale.value}%)`; const cropperImg = document.querySelector('.cropper-view-box img'); if(cropperImg) cropperImg.style.filter = filterStr; return filterStr; }
+    function resetFilters() { brightness.value = 100; contrast.value = 100; saturation.value = 100; grayscale.value = 0; applyFilters(); }
+    function applyMagicScan() { brightness.value = 110; contrast.value = 180; applyFilters(); }
+    
+    // Tools auto-select PNG
+    function extractSignature() { if (!cropper) return; const canvas = cropper.getCroppedCanvas(), ctx = canvas.getContext('2d'), imageData = ctx.getImageData(0, 0, canvas.width, canvas.height), data = imageData.data; for (let i = 0; i < data.length; i += 4) { const bright = (data[i] * 0.299) + (data[i+1] * 0.587) + (data[i+2] * 0.114); if (bright > 160) { data[i+3] = 0; } else { data[i] = Math.max(0, data[i]-30); data[i+1] = Math.max(0, data[i+1]-30); data[i+2] = Math.max(0, data[i+2]-30); data[i+3] = 255; } } ctx.putImageData(imageData, 0, 0); cropper.replace(canvas.toDataURL('image/png')); document.getElementById('exportFormat').value = 'image/png|png'; }
+    function magicWandErase() { if (!cropper) return; const canvas = cropper.getCroppedCanvas(), ctx = canvas.getContext('2d'), imageData = ctx.getImageData(0, 0, canvas.width, canvas.height), data = imageData.data; const bgR = data[0], bgG = data[1], bgB = data[2], tolerance = 50; for (let i = 0; i < data.length; i += 4) { if (Math.sqrt(Math.pow(data[i]-bgR, 2) + Math.pow(data[i+1]-bgG, 2) + Math.pow(data[i+2]-bgB, 2)) < tolerance) data[i+3] = 0; } ctx.putImageData(imageData, 0, 0); cropper.replace(canvas.toDataURL('image/png')); document.getElementById('exportFormat').value = 'image/png|png'; }
+    
+    function setPreset(w, h, size, unit) { document.getElementById('imgWidth').value = w; document.getElementById('imgHeight').value = h; document.getElementById('targetSize').value = size; document.getElementById('sizeUnit').value = unit; if(cropper) cropper.setAspectRatio(w/h); }
+    
+    const faceGuide = document.getElementById('faceGuide'); let isDragging = false, startX, startY, initialLeft, initialTop;
+    document.getElementById('toggleFaceBtn').addEventListener('click', () => { faceGuide.style.display = faceGuide.style.display === 'block' ? 'none' : 'block'; });
+    function startDrag(e) { isDragging = true; startX = e.clientX || e.touches[0].clientX; startY = e.clientY || e.touches[0].clientY; initialLeft = faceGuide.offsetLeft; initialTop = faceGuide.offsetTop; faceGuide.style.cursor = 'grabbing'; e.preventDefault(); }
+    function doDrag(e) { if (!isDragging) return; const dx = (e.clientX || e.touches[0].clientX) - startX, dy = (e.clientY || e.touches[0].clientY) - startY; faceGuide.style.left = (initialLeft + dx) + 'px'; faceGuide.style.top = (initialTop + dy) + 'px'; faceGuide.style.transform = 'translate(-50%, -50%) scale(1)'; }
+    function stopDrag() { isDragging = false; faceGuide.style.cursor = 'move'; }
+    faceGuide.addEventListener('mousedown', startDrag); faceGuide.addEventListener('touchstart', startDrag); document.addEventListener('mousemove', doDrag); document.addEventListener('touchmove', doDrag); document.addEventListener('mouseup', stopDrag); document.addEventListener('touchend', stopDrag);
+
+    // 🚀 NEW: Extractor Logic Update
+    async function universalConvert() {
+        if (selectedFiles.length === 0) return alert("Please upload a file first!");
+        
+        // 💥 Extracting MIME type and Extension separately
+        const formatRaw = document.getElementById('exportFormat').value; 
+        const targetFormat = formatRaw.split('|')[0];
+        const fileExt = formatRaw.split('|')[1];
+        
+        const firstFile = selectedFiles[0];
+        document.getElementById('successModal').style.display = 'flex'; document.getElementById('closeModalBtn').style.display = 'none'; document.getElementById('modalTitle').innerText = "🔄 Converting Format..."; document.getElementById('modalDownloadArea').innerHTML = `<div class="loader-spinner" style="margin: 0 auto;"></div>`;
+        try {
+            if (firstFile.type === 'application/pdf') {
+                if (targetFormat === 'application/pdf') throw new Error("File is already a PDF!");
+                const arrayBuffer = await firstFile.arrayBuffer(); const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+                for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
+                    const page = await pdf.getPage(pageNum); const viewport = page.getViewport({ scale: 2.0 }); const canvas = document.createElement('canvas'); const ctx = canvas.getContext('2d'); canvas.width = viewport.width; canvas.height = viewport.height; await page.render({ canvasContext: ctx, viewport: viewport }).promise;
+                    const imgData = canvas.toDataURL(targetFormat, 1.0); const filename = `${firstFile.name.split('.')[0]}_Pg${pageNum}.${fileExt}`;
+                    const a = document.createElement('a'); a.href = imgData; a.download = filename; document.body.appendChild(a); a.click(); document.body.removeChild(a);
+                    addToHistory(imgData, imgData, filename, 'Extracted from PDF'); await new Promise(r => setTimeout(r, 500)); 
+                }
+                document.getElementById('modalTitle').innerText = "✅ Conversion Complete!"; document.getElementById('modalDownloadArea').innerHTML = `<p>Files downloaded & saved to History!</p>`;
+            } else if (firstFile.type.startsWith('image/')) {
+                const canvas = document.createElement('canvas'); const img = new Image(); img.src = URL.createObjectURL(firstFile); await new Promise(r => img.onload = r); canvas.width = img.width; canvas.height = img.height; const ctx = canvas.getContext('2d'); ctx.fillStyle = (targetFormat === 'image/png' || targetFormat === 'image/webp') ? 'transparent' : '#fff'; ctx.fillRect(0, 0, canvas.width, canvas.height); ctx.drawImage(img, 0, 0);
+                let finalBlob;
+                if(targetFormat === 'application/pdf'){ const { jsPDF } = window.jspdf; const pdf = new jsPDF(canvas.width > canvas.height ? 'l' : 'p', 'px', [canvas.width, canvas.height]); pdf.addImage(canvas.toDataURL('image/jpeg', 1.0), 'JPEG', 0, 0, canvas.width, canvas.height); finalBlob = pdf.output('blob'); } 
+                else { const dataUrl = canvas.toDataURL(targetFormat, 1.0); const b = atob(dataUrl.split(',')[1]), ia = new Uint8Array(b.length); for (let i=0; i<b.length; i++) ia[i] = b.charCodeAt(i); finalBlob = new Blob([ia], {type: targetFormat}); }
+                let url = URL.createObjectURL(finalBlob); const filename = `Converted_${firstFile.name.split('.')[0]}.${fileExt}`;
+                const a = document.createElement('a'); a.href = url; a.download = filename; document.body.appendChild(a); a.click(); document.body.removeChild(a);
+                addToHistory(canvas.toDataURL(targetFormat === 'application/pdf' ? 'image/jpeg' : targetFormat, 0.5), url, filename, `Format: ${fileExt.toUpperCase()}`);
+                document.getElementById('modalTitle').innerText = "✅ Converted & Downloaded!"; document.getElementById('modalDownloadArea').innerHTML = `<p>Check your Downloads folder & History tab.</p>`;
+            }
+            document.getElementById('closeModalBtn').style.display = 'block';
+        } catch (error) { document.getElementById('modalTitle').innerText = "❌ Error"; document.getElementById('modalDownloadArea').innerHTML = `<p style="color:red;">${error.message}</p>`; document.getElementById('closeModalBtn').style.display = 'block'; }
+    }
+
+    // 🚀 THE MAGIC: HD LOSSLESS SMART COMPRESSION (Updated with Extractor)
+    document.getElementById('resizeBtn').addEventListener('click', async function() {
+        if(selectedFiles.length === 0 || selectedFiles[0].type === 'application/pdf') return alert("Upload an image first for resizing!");
+        let targetValue = parseFloat(document.getElementById('targetSize').value); let unit = document.getElementById('sizeUnit').value; 
+        
+        // 💥 Update: Split logic
+        const formatRaw = document.getElementById('exportFormat').value;
+        const format = formatRaw.split('|')[0];
+        const fileExt = formatRaw.split('|')[1];
+
+        if(isNaN(targetValue)) return alert("Enter target size!");
+        let targetBytes = targetValue * (unit === 'gb' ? 1024*1024*1024 : unit === 'mb' ? 1024*1024 : unit === 'kb' ? 1024 : 1);
+
+        document.getElementById('successModal').style.display = 'flex'; document.getElementById('modalTitle').innerText = "✅ Generating HD File..."; document.getElementById('modalDownloadArea').innerHTML = `<div class="loader-spinner" style="margin: 0 auto;"></div>`;
+
+        if (selectedFiles.length === 1) {
+            await new Promise(r => setTimeout(r, 100));
+            const rawCanvas = cropper.getCroppedCanvas({ width: parseInt(document.getElementById('imgWidth').value) || undefined, height: parseInt(document.getElementById('imgHeight').value) || undefined, fillColor: (format === 'image/png' || format === 'image/webp') ? 'transparent' : '#fff' });
+            
+            const originalCanvas = document.createElement('canvas'); originalCanvas.width = rawCanvas.width; originalCanvas.height = rawCanvas.height;
+            const ctxOriginal = originalCanvas.getContext('2d'); ctxOriginal.filter = applyFilters(); ctxOriginal.drawImage(rawCanvas, 0, 0); ctxOriginal.filter = 'none';
+
+            const pName = document.getElementById('printName').value.toUpperCase(); const pDate = document.getElementById('printDate').value;
+            if (pName || pDate) {
+                const sh = originalCanvas.height * 0.15; ctxOriginal.fillStyle = "white"; ctxOriginal.fillRect(0, originalCanvas.height - sh, originalCanvas.width, sh); ctxOriginal.fillStyle = "black"; ctxOriginal.textAlign = "center"; ctxOriginal.font = `bold ${sh * 0.4}px Arial`;
+                if(pName && pDate) { ctxOriginal.fillText(pName, originalCanvas.width/2, originalCanvas.height - sh/2 - 2); ctxOriginal.fillText(pDate.split('-').reverse().join('-'), originalCanvas.width/2, originalCanvas.height - 5); } else { ctxOriginal.fillText(pName || pDate.split('-').reverse().join('-'), originalCanvas.width/2, originalCanvas.height - sh/3); }
+            }
+
+            let finalBlob; let quality = 0.95; let scaleFactor = 1.0;
+            let tempCanvas = document.createElement('canvas'); tempCanvas.width = originalCanvas.width; tempCanvas.height = originalCanvas.height;
+            let tempCtx = tempCanvas.getContext('2d'); tempCtx.drawImage(originalCanvas, 0, 0);
+
+            const generateBlob = (c, q) => {
+                if (format === 'application/pdf') {
+                    const { jsPDF } = window.jspdf; const pdf = new jsPDF(c.width > c.height ? 'l' : 'p', 'px', [c.width, c.height]); pdf.addImage(c.toDataURL('image/jpeg', q), 'JPEG', 0, 0, c.width, c.height); return pdf.output('blob');
+                } else {
+                    const dUrl = c.toDataURL(format, q); const b = atob(dUrl.split(',')[1]), ia = new Uint8Array(b.length); for (let i=0; i<b.length; i++) ia[i] = b.charCodeAt(i); return new Blob([ia], {type: format});
+                }
+            };
+
+            finalBlob = generateBlob(tempCanvas, quality);
+
+            while (finalBlob.size > targetBytes && scaleFactor > 0.1) {
+                if (quality > 0.7) { quality -= 0.05; } else {
+                    scaleFactor -= 0.15; quality = 0.85; 
+                    tempCanvas.width = Math.max(1, originalCanvas.width * scaleFactor); tempCanvas.height = Math.max(1, originalCanvas.height * scaleFactor);
+                    tempCtx = tempCanvas.getContext('2d'); tempCtx.drawImage(originalCanvas, 0, 0, tempCanvas.width, tempCanvas.height);
+                }
+                finalBlob = generateBlob(tempCanvas, quality);
+            }
+            
+            if (finalBlob.size < targetBytes) { finalBlob = new Blob([finalBlob, new Uint8Array(targetBytes - finalBlob.size)], {type: format}); }
+
+            const previewUrl = tempCanvas.toDataURL(format === 'application/pdf' ? 'image/jpeg' : format, 0.5);
+            const fUrl = URL.createObjectURL(finalBlob);
+            
+            // 💥 File name generation uses exact separated extension now
+            const filename = `HD_Resized_${selectedFiles[0].name.split('.')[0]}.${fileExt}`;
+            
+            const oStr = formatSize(originalBytes); const fStr = formatSize(finalBlob.size);
+            const saved = originalBytes > finalBlob.size ? Math.round(((originalBytes - finalBlob.size) / originalBytes) * 100) : 0;
+
+            addToHistory(previewUrl, fUrl, filename, `HD Size: ${fStr}`);
+
+            document.getElementById('modalTitle').innerText = "✅ HD File Ready!";
+            document.getElementById('modalDownloadArea').innerHTML = `<img src="${previewUrl}" style="max-height:100px; border:1px solid #ccc; margin-bottom:10px; border-radius:5px; background: #eee;"><p style="margin:5px 0;">Original: <b>${oStr}</b> ➔ HD New: <b>${fStr}</b></p><p style="color:#28a745; font-weight:bold; margin-bottom:15px;">Efficiency: Saved ~${saved}% without blur</p><a href="${fUrl}" download="${filename}" style="text-decoration:none;"><button class="generate-btn" style="margin:0;">📥 Download HD File</button></a>`;
+            document.getElementById('closeModalBtn').style.display = 'block';
+        }
+    });
+</script>
+</body>
+</html>
