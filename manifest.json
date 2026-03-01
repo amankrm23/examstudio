@@ -1,0 +1,16 @@
+{
+  "name": "ExamStudio Pro",
+  "short_name": "ExamStudio",
+  "description": "Free Offline Exam Photo Resizer & Format Converter.",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#007bff",
+  "icons": [
+    {
+      "src": "https://cdn-icons-png.flaticon.com/512/2916/2916315.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
