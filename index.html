@@ -13,7 +13,9 @@
         :root { --bg: #eef2f5; --card: #ffffff; --text: #333; --border: #ccc; --input: #fff; }
         .dark-mode { --bg: #121212; --card: #1e1e1e; --text: #f1f1f1; --border: #444; --input: #2d2d2d; }
         
-        body { font-family: 'Segoe UI', sans-serif; background-color: var(--bg); color: var(--text); margin: 0; padding: 20px; transition: 0.3s; padding-bottom: 100px; touch-action: manipulation; scroll-behavior: smooth; }
+        /* 🛡️ SECURITY: Disable text selection globally */
+        body { font-family: 'Segoe UI', sans-serif; background-color: var(--bg); color: var(--text); margin: 0; padding: 20px; transition: 0.3s; padding-bottom: 100px; touch-action: manipulation; scroll-behavior: smooth; -webkit-user-select: none; -moz-user-select: none; -ms-user-select: none; user-select: none; }
+        
         .dashboard { display: flex; flex-wrap: wrap; gap: 20px; max-width: 1200px; margin: 0 auto; justify-content: center; }
         .workspace, .controls, .history-panel { background: var(--card); padding: 20px; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
         .workspace { flex: 1; min-width: 320px; }
@@ -26,7 +28,10 @@
         #cropperWrapper { display: none; margin-top: 15px; width: 100%; height: 50vh; min-height: 400px; background-color: #f0f0f0; background-image: linear-gradient(45deg, #ccc 25%, transparent 25%), linear-gradient(-45deg, #ccc 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #ccc 75%), linear-gradient(-45deg, transparent 75%, #ccc 75%); background-size: 20px 20px; border: 2px dashed var(--border); overflow: hidden; position: relative; }
         #batchUI { display: none; margin-top: 15px; padding: 30px; text-align: center; background: rgba(40, 167, 69, 0.1); border: 2px dashed #28a745; border-radius: 8px; }
         
-        img { display: block; max-width: 100%; }
+        /* 🛡️ SECURITY: Prevent dragging images */
+        img { display: block; max-width: 100%; pointer-events: none; }
+        .history-item img { pointer-events: auto; } /* Allow clicking history */
+        
         #faceGuide { display: none; position: absolute; top: 50%; left: 50%; width: 140px; height: 190px; border: 3px dashed rgba(255, 50, 50, 0.9); border-radius: 50% / 40%; box-shadow: 0 0 0 9999px rgba(0,0,0,0.4); z-index: 10; cursor: move; transform: translate(-50%, -50%); }
 
         .input-group { margin-bottom: 12px; }
@@ -161,6 +166,18 @@
 
 <script defer src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.js"></script>
 <script>
+    // 🛡️ SECURITY SHIELD: Anti-Inspect & Anti-Copy Code
+    (function(){
+        document.addEventListener("contextmenu",function(e){e.preventDefault()});
+        document.onkeydown=function(e){
+            if(e.keyCode==123)return!1; /* F12 */
+            if(e.ctrlKey&&e.shiftKey&&(e.keyCode==73||e.keyCode==74||e.keyCode==67))return!1; /* Ctrl+Shift+I/J/C */
+            if(e.ctrlKey&&(e.keyCode==85||e.keyCode==83))return!1; /* Ctrl+U / Ctrl+S */
+        };
+        document.addEventListener('dragstart', function(e){ if(e.target.nodeName.toUpperCase()=="IMG")e.preventDefault(); });
+    })();
+
+    // ⚙️ CORE ENGINE (Minified Logic)
     window.addEventListener('DOMContentLoaded', () => {
         setTimeout(() => {
             const heavyScripts = ["https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js","https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js","https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"];
@@ -171,8 +188,7 @@
                     loadedCount++;
                     if (src.includes('pdf.min.js') && window.pdfjsLib) pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
                     if(loadedCount === heavyScripts.length) { document.getElementById('engineStatus').innerText = "✅ All Pro Engines Ready"; setTimeout(() => document.getElementById('engineStatus').style.display = 'none', 3000); }
-                };
-                document.body.appendChild(script);
+                }; document.body.appendChild(script);
             });
         }, 1000); 
         setTimeout(() => { document.getElementById('donationToast').classList.add('show'); }, 4000);
@@ -193,10 +209,7 @@
     function resetWorkspace() { if(cropper) cropper.destroy(); document.getElementById('cropperWrapper').style.display = 'none'; document.getElementById('editorControls').style.display = 'none'; document.getElementById('batchUI').style.display = 'none'; document.getElementById('dropZone').style.display = 'block'; document.getElementById('newUploadBtn').style.display = 'none'; document.getElementById('uploadImage').value = ''; selectedFiles = []; }
     
     const dropZone = document.getElementById('dropZone'), fileInput = document.getElementById('uploadImage');
-    dropZone.addEventListener('click', () => fileInput.click());
-    dropZone.addEventListener('dragover', (e) => { e.preventDefault(); dropZone.classList.add('drag-over'); });
-    dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drag-over'));
-    dropZone.addEventListener('drop', (e) => { e.preventDefault(); dropZone.classList.remove('drag-over'); if(e.dataTransfer.files.length) handleFiles(e.dataTransfer.files); });
+    dropZone.addEventListener('click', () => fileInput.click()); dropZone.addEventListener('dragover', (e) => { e.preventDefault(); dropZone.classList.add('drag-over'); }); dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drag-over')); dropZone.addEventListener('drop', (e) => { e.preventDefault(); dropZone.classList.remove('drag-over'); if(e.dataTransfer.files.length) handleFiles(e.dataTransfer.files); });
     fileInput.addEventListener('change', (e) => { if(e.target.files.length) handleFiles(e.target.files); });
 
     function handleFiles(files) {
@@ -215,16 +228,10 @@
     }
 
     const brightness = document.getElementById('brightness'), contrast = document.getElementById('contrast'), saturation = document.getElementById('saturation'), grayscale = document.getElementById('grayscale');
-    function applyFilters() { 
-        document.getElementById('brVal').innerText = brightness.value + '%'; document.getElementById('ctVal').innerText = contrast.value + '%';
-        const filterStr = `brightness(${brightness.value}%) contrast(${contrast.value}%) saturate(${saturation.value}%) grayscale(${grayscale.value}%)`;
-        const cropperImg = document.querySelector('.cropper-view-box img'); if(cropperImg) cropperImg.style.filter = filterStr; return filterStr; 
-    }
+    function applyFilters() { document.getElementById('brVal').innerText = brightness.value + '%'; document.getElementById('ctVal').innerText = contrast.value + '%'; const filterStr = `brightness(${brightness.value}%) contrast(${contrast.value}%) saturate(${saturation.value}%) grayscale(${grayscale.value}%)`; const cropperImg = document.querySelector('.cropper-view-box img'); if(cropperImg) cropperImg.style.filter = filterStr; return filterStr; }
     function extractSignature() { if (!cropper) return; const canvas = cropper.getCroppedCanvas(), ctx = canvas.getContext('2d'), imageData = ctx.getImageData(0, 0, canvas.width, canvas.height), data = imageData.data; for (let i = 0; i < data.length; i += 4) { const bright = (data[i] * 0.299) + (data[i+1] * 0.587) + (data[i+2] * 0.114); if (bright > 160) data[i+3] = 0; } ctx.putImageData(imageData, 0, 0); cropper.replace(canvas.toDataURL('image/png')); document.getElementById('exportFormat').value = 'image/png|png'; }
     function magicWandErase() { if (!cropper) return; const canvas = cropper.getCroppedCanvas(), ctx = canvas.getContext('2d'), imageData = ctx.getImageData(0, 0, canvas.width, canvas.height), data = imageData.data; const bgR = data[0], bgG = data[1], bgB = data[2]; for (let i = 0; i < data.length; i += 4) { if (Math.sqrt(Math.pow(data[i]-bgR, 2) + Math.pow(data[i+1]-bgG, 2) + Math.pow(data[i+2]-bgB, 2)) < 50) data[i+3] = 0; } ctx.putImageData(imageData, 0, 0); cropper.replace(canvas.toDataURL('image/png')); }
     function setPreset(w, h, size, unit) { document.getElementById('imgWidth').value = w; document.getElementById('imgHeight').value = h; document.getElementById('targetSize').value = size; document.getElementById('sizeUnit').value = unit; if(cropper) cropper.setAspectRatio(w/h); }
-    
-    // UI Event Listeners for Filters
     [brightness, contrast, saturation, grayscale].forEach(el => el.addEventListener('input', applyFilters));
 
     async function universalConvert() {
@@ -269,8 +276,7 @@
             ctx.fillText(pName || pDate, canvas.width/2, canvas.height - sh/2);
         }
 
-        let quality = 0.95, blob;
-        const getBlob = (q) => new Promise(r => canvas.toBlob(b => r(b), format, q));
+        let quality = 0.95, blob; const getBlob = (q) => new Promise(r => canvas.toBlob(b => r(b), format, q));
         blob = await getBlob(quality);
         while (blob.size > targetBytes && quality > 0.1) { quality -= 0.05; blob = await getBlob(quality); }
         if (blob.size < targetBytes) blob = new Blob([blob, new Uint8Array(targetBytes - blob.size)], {type: format});
