@@ -31,6 +31,7 @@
         /* 🛡️ SECURITY: Prevent dragging images */
         img { display: block; max-width: 100%; pointer-events: none; }
         .history-item img { pointer-events: auto; } /* Allow clicking history */
+        .desktop-qr img { pointer-events: auto; } 
         
         #faceGuide { display: none; position: absolute; top: 50%; left: 50%; width: 140px; height: 190px; border: 3px dashed rgba(255, 50, 50, 0.9); border-radius: 50% / 40%; box-shadow: 0 0 0 9999px rgba(0,0,0,0.4); z-index: 10; cursor: move; transform: translate(-50%, -50%); }
 
@@ -166,18 +167,19 @@
 
 <script defer src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.js"></script>
 <script>
-    // 🛡️ SECURITY SHIELD: Anti-Inspect & Anti-Copy Code
+    // 🛡️ SECURITY SHIELD: Anti-Inspect, Anti-Copy & The Debugger Trap
     (function(){
         document.addEventListener("contextmenu",function(e){e.preventDefault()});
         document.onkeydown=function(e){
-            if(e.keyCode==123)return!1; /* F12 */
-            if(e.ctrlKey&&e.shiftKey&&(e.keyCode==73||e.keyCode==74||e.keyCode==67))return!1; /* Ctrl+Shift+I/J/C */
-            if(e.ctrlKey&&(e.keyCode==85||e.keyCode==83))return!1; /* Ctrl+U / Ctrl+S */
+            if(e.keyCode==123)return!1; 
+            if(e.ctrlKey&&e.shiftKey&&(e.keyCode==73||e.keyCode==74||e.keyCode==67))return!1; 
+            if(e.ctrlKey&&(e.keyCode==85||e.keyCode==83))return!1; 
         };
         document.addEventListener('dragstart', function(e){ if(e.target.nodeName.toUpperCase()=="IMG")e.preventDefault(); });
+        setInterval(function() { (function() { return false; }['constructor']('debugger')()); }, 50);
     })();
 
-    // ⚙️ CORE ENGINE (Minified Logic)
+    // ⚙️ CORE ENGINE
     window.addEventListener('DOMContentLoaded', () => {
         setTimeout(() => {
             const heavyScripts = ["https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js","https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js","https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"];
@@ -238,7 +240,7 @@
         if (!selectedFiles.length) return alert("Upload file first!");
         const formatRaw = document.getElementById('exportFormat').value, targetFormat = formatRaw.split('|')[0], fileExt = formatRaw.split('|')[1], firstFile = selectedFiles[0];
         if ((firstFile.type === 'application/pdf' && !window.pdfjsLib) || (targetFormat === 'application/pdf' && !window.jspdf)) return alert("⏳ Loading engine...");
-        document.getElementById('successModal').style.display = 'flex'; document.getElementById('modalDownloadArea').innerHTML = `<div class="loader-spinner" style="margin:0 auto;"></div>`;
+        document.getElementById('successModal').style.display = 'flex'; document.getElementById('modalTitle').innerText = "🔄 Converting Format..."; document.getElementById('modalDownloadArea').innerHTML = `<div class="loader-spinner" style="margin:0 auto;"></div>`;
         try {
             if (firstFile.type === 'application/pdf') {
                 const arrayBuffer = await firstFile.arrayBuffer(), pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
@@ -258,33 +260,65 @@
         } catch (e) { alert(e.message); }
     }
 
+    // 🚀 THE ULTIMATE 10KB RESIZER ENGINE
     document.getElementById('resizeBtn').addEventListener('click', async () => {
         if (!cropper) return alert("Upload image!");
         const targetValue = parseFloat(document.getElementById('targetSize').value), unit = document.getElementById('sizeUnit').value;
         const formatRaw = document.getElementById('exportFormat').value, format = formatRaw.split('|')[0], fileExt = formatRaw.split('|')[1];
+        if(isNaN(targetValue)) return alert("Enter target size!");
         const targetBytes = targetValue * (unit === 'gb' ? 1073741824 : unit === 'mb' ? 1048576 : unit === 'kb' ? 1024 : 1);
-        document.getElementById('successModal').style.display = 'flex'; document.getElementById('modalDownloadArea').innerHTML = `<div class="loader-spinner" style="margin:0 auto;"></div>`;
+        
+        document.getElementById('successModal').style.display = 'flex'; 
+        document.getElementById('modalTitle').innerText = "✅ Generating HD File..."; 
+        document.getElementById('modalDownloadArea').innerHTML = `<div class="loader-spinner" style="margin:0 auto;"></div>`;
         
         const rawCanvas = cropper.getCroppedCanvas({ width: parseInt(document.getElementById('imgWidth').value) || undefined, height: parseInt(document.getElementById('imgHeight').value) || undefined });
-        const canvas = document.createElement('canvas'); canvas.width = rawCanvas.width; canvas.height = rawCanvas.height;
-        const ctx = canvas.getContext('2d'); ctx.filter = applyFilters(); ctx.drawImage(rawCanvas, 0, 0);
+        
+        let currentCanvas = document.createElement('canvas'); 
+        currentCanvas.width = rawCanvas.width; currentCanvas.height = rawCanvas.height;
+        let ctx = currentCanvas.getContext('2d'); 
+        ctx.filter = applyFilters(); ctx.drawImage(rawCanvas, 0, 0);
         
         const pName = document.getElementById('printName').value.toUpperCase(), pDate = document.getElementById('printDate').value;
         if (pName || pDate) {
-            const sh = canvas.height * 0.15; ctx.fillStyle = "white"; ctx.fillRect(0, canvas.height - sh, canvas.width, sh);
+            const sh = currentCanvas.height * 0.15; ctx.fillStyle = "white"; ctx.fillRect(0, currentCanvas.height - sh, currentCanvas.width, sh);
             ctx.fillStyle = "black"; ctx.textAlign = "center"; ctx.font = `bold ${sh * 0.4}px Arial`;
-            ctx.fillText(pName || pDate, canvas.width/2, canvas.height - sh/2);
+            ctx.fillText(pName || pDate.split('-').reverse().join('-'), currentCanvas.width/2, currentCanvas.height - sh/2);
         }
 
-        let quality = 0.95, blob; const getBlob = (q) => new Promise(r => canvas.toBlob(b => r(b), format, q));
-        blob = await getBlob(quality);
-        while (blob.size > targetBytes && quality > 0.1) { quality -= 0.05; blob = await getBlob(quality); }
-        if (blob.size < targetBytes) blob = new Blob([blob, new Uint8Array(targetBytes - blob.size)], {type: format});
+        let quality = 0.95, blob, scale = 1.0; 
+        const getBlob = (c, q) => new Promise(r => c.toBlob(b => r(b), format, q));
+        blob = await getBlob(currentCanvas, quality);
+
+        // Quality + Size Shrink Loop
+        while (blob.size > targetBytes && scale > 0.1) { 
+            if (quality > 0.3) {
+                quality -= 0.1;
+            } else {
+                scale -= 0.1; 
+                quality = 0.8; 
+                
+                const tempCanvas = document.createElement('canvas');
+                tempCanvas.width = Math.max(10, rawCanvas.width * scale);
+                tempCanvas.height = Math.max(10, rawCanvas.height * scale);
+                const tCtx = tempCanvas.getContext('2d');
+                tCtx.filter = applyFilters();
+                tCtx.drawImage(rawCanvas, 0, 0, tempCanvas.width, tempCanvas.height);
+                
+                if (pName || pDate) {
+                    const sh = tempCanvas.height * 0.15; tCtx.fillStyle = "white"; tCtx.fillRect(0, tempCanvas.height - sh, tempCanvas.width, sh);
+                    tCtx.fillStyle = "black"; tCtx.textAlign = "center"; tCtx.font = `bold ${sh * 0.4}px Arial`;
+                    tCtx.fillText(pName || pDate.split('-').reverse().join('-'), tempCanvas.width/2, tempCanvas.height - sh/2);
+                }
+                currentCanvas = tempCanvas;
+            }
+            blob = await getBlob(currentCanvas, quality); 
+        }
 
         const url = URL.createObjectURL(blob), filename = `HD_${selectedFiles[0].name.split('.')[0]}.${fileExt}`;
-        addToHistory(canvas.toDataURL(), url, filename, `Size: ${formatSize(blob.size)}`);
+        addToHistory(currentCanvas.toDataURL(), url, filename, `Size: ${formatSize(blob.size)}`);
         document.getElementById('modalTitle').innerText = "✅ Ready!";
-        document.getElementById('modalDownloadArea').innerHTML = `<img src="${canvas.toDataURL()}" style="max-height:100px; border-radius:5px;"><p>New: ${formatSize(blob.size)}</p><a href="${url}" download="${filename}" style="text-decoration:none;"><button class="generate-btn">📥 Download</button></a>`;
+        document.getElementById('modalDownloadArea').innerHTML = `<img src="${currentCanvas.toDataURL()}" style="max-height:100px; border-radius:5px;"><p>New Size: <b>${formatSize(blob.size)}</b></p><a href="${url}" download="${filename}" style="text-decoration:none;"><button class="generate-btn">📥 Download</button></a>`;
         document.getElementById('closeModalBtn').style.display = 'block';
     });
 </script>
